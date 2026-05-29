@@ -11,7 +11,7 @@ POWERBI_EMBED_URL = os.getenv("POWERBI_EMBED_URL", "")
 # Cohere models
 EMBED_MODEL   = "embed-multilingual-v3.0"
 RERANK_MODEL  = "rerank-multilingual-v3.0"
-CHAT_MODEL    = "command-r-plus"          # No GPU needed
+CHAT_MODEL    = "command-r"               # Active, fast, and fully supported
 
 # Scraping defaults
 SEMANTIC_THRESHOLD = 0.38
