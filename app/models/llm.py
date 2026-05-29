@@ -120,7 +120,7 @@ def stream_chat(
         "model": CHAT_MODEL,
         "messages": formatted_messages,
         "temperature": 0.7,
-        "max_tokens": 1024,                     # Increased token limit for rich, detailed replies
+        "max_tokens": 1500,                     # Increased token limit to prevent mid-sentence cut-offs
         "stream": True
     }
 
@@ -170,7 +170,7 @@ def stream_chat(
             model="command-a-plus-05-2026",
             messages=cohere_messages,
             temperature=0.5,
-            max_tokens=1024,                    # Increased token limit for rich, detailed replies
+            max_tokens=1500,                    # Increased token limit to prevent mid-sentence cut-offs
         )
 
         for event in stream:
