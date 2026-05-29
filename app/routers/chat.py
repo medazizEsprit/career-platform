@@ -35,10 +35,6 @@ def _event_stream(message: str, history: list):
 
 @router.post("/chat")
 async def chat_endpoint(req: ChatRequest):
-    if not state.cv_text:
-        raise HTTPException(status_code=400, detail="Please upload a CV first.")
-    if not state.top_matches:
-        raise HTTPException(status_code=400, detail="Please run job matching first.")
     if not req.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
