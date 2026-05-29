@@ -119,9 +119,6 @@ btnSearch.addEventListener('click', async () => {
   setLoading(btnSearch, true);
 
   try {
-    const limitEl = document.getElementById('job-limit');
-    const threshEl = document.getElementById('threshold');
-
     const res = await fetch('/api/search-jobs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
