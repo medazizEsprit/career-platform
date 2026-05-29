@@ -142,29 +142,32 @@ def stream_chat(
     except Exception as e:
         print(f"Power BI / HF: Hugging Face connection failed ({e}). Falling back to Cohere Command-A...")
 
-    # --- ENGINE 2: Cohere Command-A Fallback (Unblocked on restricted networks) ---
+    # --- ENGINE 2: Cohere V2 Fallback (Unblocked on restricted networks) ---
     if not COHERE_API_KEY:
         yield "Connection Error: Hugging Face API is unreachable on your current network, and no COHERE_API key is configured in your .env file to act as a fallback."
         return
 
     try:
-        # Connect using Cohere's active Command-A+ model
-        client = cohere.Client(COHERE_API_KEY)
+        # Connect using Cohere's active V2 Client and flagship Command-A+ model
+        client = cohere.ClientV2(api_key=COHERE_API_KEY)
         
-        cohere_history = []
+        # Build messages in standard V2 format
+        cohere_messages = [{"role": "system", "content": system_prompt}]
         for turn in history:
-            role = "USER" if turn["role"] == "user" else "CHATBOT"
-            cohere_history.append({"role": role, "message": turn["content"]})
+            role = "user" if turn["role"] == "user" else "assistant"
+            cohere_messages.append({"role": role, "content": turn["content"]})
+        cohere_messages.append({"role": "user", "content": message})
 
-        for event in client.chat_stream(
+        # Cohere V2 chat stream call
+        stream = client.chat_stream(
             model="command-a-plus-05-2026",
-            message=message,
-            preamble=system_prompt,
-            chat_history=cohere_history,
+            messages=cohere_messages,
             temperature=0.5,
             max_tokens=400,
-        ):
-            if event.event_type == "text-generation":
-                yield event.text
+        )
+
+        for event in stream:
+            if event.type == "content-delta" and event.delta and event.delta.message and event.delta.message.content:
+                yield event.delta.message.content.text
     except Exception as co_err:
         yield f"Chat Connection Error: Both Qwen (Hugging Face) and Cohere APIs failed. details:\n- Qwen: Blocked / Unreachable\n- Cohere: {co_err}"
