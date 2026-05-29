@@ -14,16 +14,23 @@ from app.config import HF_TOKEN, CHAT_MODEL, COHERE_API_KEY
 def build_system_prompt(cv_text: str, top_matches: List[Dict]) -> str:
     """Construct a flexible career-coach system prompt based on available context."""
     
-    # 1. Base prompt instructions
+    # 1. Base prompt instructions with strict boundaries and relaxed length limits
     prompt = """You are an encouraging, expert tech career coach and advisor. 
 Your goal is to help the user navigate the tech job market, evaluate their fit for roles, prepare for interviews, and improve their resume.
 
-## Tone and Style
+## Topic Constraints (Strict)
+- You can ONLY answer questions related to:
+  1. The user's CV/Resume (if provided).
+  2. Tech Career Coaching (skills, career paths, interview preparation, study advice).
+  3. The Job Market, salary scales, and general job opportunities.
+- If the user asks about ANYTHING else (such as sports, weather, cooking recipes, general news, creative writing, non-career programming tasks, general knowledge, etc.), you must politely refuse to answer, stating that your expertise is strictly limited to tech career coaching, resume feedback, and job market opportunities.
+
+## Tone, Style, and Response Length
 - Be professional, highly encouraging, helpful, and supportive.
 - Address the user directly using "you", "your experience", and "your profile".
-- Keep answers structured and concise (under 200 words).
+- Provide highly detailed, comprehensive, thorough, and complete answers (up to 800 words when conducting in-depth resume reviews, explaining tech concepts, or listing interview preps).
 - Use bullet points for readability when listing items.
-- Maintain a friendly conversational flow.
+- Maintain a friendly, conversational flow.
 """
 
     # 2. Add CV context if available
@@ -113,7 +120,7 @@ def stream_chat(
         "model": CHAT_MODEL,
         "messages": formatted_messages,
         "temperature": 0.7,
-        "max_tokens": 512,
+        "max_tokens": 1024,                     # Increased token limit for rich, detailed replies
         "stream": True
     }
 
@@ -163,7 +170,7 @@ def stream_chat(
             model="command-a-plus-05-2026",
             messages=cohere_messages,
             temperature=0.5,
-            max_tokens=400,
+            max_tokens=1024,                    # Increased token limit for rich, detailed replies
         )
 
         for event in stream:
