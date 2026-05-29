@@ -231,6 +231,36 @@ function renderNativeDashboard(wrap) {
   }, 100);
 }
 
+// ── Power BI Dynamic Filter Configuration (Solution 1) ────────────────────────
+// Modify these to match the actual Table and Column names in your TBD_JOBS.pbix model!
+const PBI_TABLE_NAME = "Jobs";       // Table name in Power BI
+const PBI_COLUMN_NAME = "Title";      // Column name in Power BI
+
+window.filterPowerBi = function(query) {
+  const iframe = document.getElementById('pbi-iframe');
+  if (!iframe) return;
+
+  fetch('/api/config')
+    .then(res => res.json())
+    .then(cfg => {
+      if (!cfg.powerbi_embed_url || cfg.powerbi_embed_url.trim() === '') return;
+      const baseUrl = getEmbedUrl(cfg.powerbi_embed_url);
+
+      if (query && query.trim() !== '') {
+        // Appends OData filter string: &filter=TableName/ColumnName eq 'Value'
+        // If query has spaces or special chars, it is uri-encoded safely
+        const cleanQuery = query.trim().replace(/'/g, "''"); // escape single quotes in OData
+        const filterStr = `&filter=${PBI_TABLE_NAME}/${PBI_COLUMN_NAME} eq '${encodeURIComponent(cleanQuery)}'`;
+        
+        iframe.src = baseUrl + filterStr;
+        console.log(`Power BI: Filtering dashboard for "${cleanQuery}" (Table: ${PBI_TABLE_NAME}, Column: ${PBI_COLUMN_NAME})`);
+      } else {
+        iframe.src = baseUrl;
+      }
+    })
+    .catch(() => {});
+};
+
 // ── Power BI embed ────────────────────────────────────────────────────────────
 async function loadPowerBI() {
   const wrap = document.getElementById('pbi-frame-wrap');
@@ -240,7 +270,7 @@ async function loadPowerBI() {
     const cfg = await res.json();
 
     if (cfg.powerbi_embed_url && cfg.powerbi_embed_url.trim() !== '') {
-      // Load Power BI iframe with a native dashboard troubleshooting toggle
+      // Load Power BI iframe with a unique ID and a native dashboard troubleshooting toggle
       wrap.innerHTML = `
         <div style="display:flex;flex-direction:column;height:100%;">
           <div class="db-alert-banner" style="margin: 10px 14px 10px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-secondary); display:flex; justify-content:space-between; align-items:center;">
@@ -250,7 +280,7 @@ async function loadPowerBI() {
             </button>
           </div>
           <div style="flex:1;" id="pbi-iframe-container">
-            <iframe src="${getEmbedUrl(cfg.powerbi_embed_url)}" allowFullscreen="true" style="width:100%;height:100%;border:none;display:block;"></iframe>
+            <iframe id="pbi-iframe" src="${getEmbedUrl(cfg.powerbi_embed_url)}" allowFullscreen="true" style="width:100%;height:100%;border:none;display:block;"></iframe>
           </div>
         </div>`;
 

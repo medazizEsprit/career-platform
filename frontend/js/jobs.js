@@ -158,6 +158,12 @@ btnSearch.addEventListener('click', async () => {
     }
 
     updateStatus(data.status);
+    
+    // Dynamically filter the Power BI Dashboard to display analytics for this query
+    if (window.filterPowerBi) {
+      window.filterPowerBi(query);
+    }
+
     toast(`Found ${allJobs.length} jobs after semantic filtering.`, 'success');
 
     // Switch to jobs tab
