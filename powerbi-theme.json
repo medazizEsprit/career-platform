@@ -1,0 +1,120 @@
+{
+  "name": "TBD Jobs — Dark Navy",
+  "dataColors": [
+    "#4F6EF7",
+    "#6B8CFF",
+    "#8BA6FF",
+    "#22C983",
+    "#3DD9A0",
+    "#F0A93E",
+    "#F05368",
+    "#9B7DFF",
+    "#5CC4E8",
+    "#FF8A65"
+  ],
+  "background": "#0C1021",
+  "foreground": "#E4E9F5",
+  "tableAccent": "#4F6EF7",
+  "maximum": "#22C983",
+  "center": "#4F6EF7",
+  "minimum": "#F05368",
+  "null": "#3E4F70",
+  "hyperlink": "#8BA6FF",
+  "textClasses": {
+    "callout": {
+      "fontSize": 28,
+      "fontFace": "Outfit",
+      "color": "#E4E9F5"
+    },
+    "title": {
+      "fontSize": 16,
+      "fontFace": "Outfit",
+      "color": "#E4E9F5"
+    },
+    "header": {
+      "fontSize": 13,
+      "fontFace": "Inter",
+      "color": "#7F8FB0"
+    },
+    "label": {
+      "fontSize": 11,
+      "fontFace": "Inter",
+      "color": "#7F8FB0"
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [
+          {
+            "color": { "solid": { "color": "#111729" } },
+            "transparency": 0
+          }
+        ],
+        "border": [
+          {
+            "color": { "solid": { "color": "#1A2346" } },
+            "show": true
+          }
+        ],
+        "outspace": [
+          {
+            "top": 8,
+            "left": 8,
+            "bottom": 8,
+            "right": 8
+          }
+        ],
+        "visualHeader": [
+          {
+            "show": false
+          }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          {
+            "color": { "solid": { "color": "#080B14" } },
+            "transparency": 0
+          }
+        ]
+      }
+    },
+    "slicer": {
+      "*": {
+        "background": [
+          {
+            "color": { "solid": { "color": "#0C1021" } },
+            "transparency": 0
+          }
+        ],
+        "items": [
+          {
+            "fontColor": { "solid": { "color": "#E4E9F5" } },
+            "background": { "solid": { "color": "#111729" } }
+          }
+        ]
+      }
+    },
+    "card": {
+      "*": {
+        "labels": [
+          {
+            "color": { "solid": { "color": "#E4E9F5" } },
+            "fontSize": 28,
+            "fontFamily": "Outfit"
+          }
+        ],
+        "categoryLabels": [
+          {
+            "color": { "solid": { "color": "#7F8FB0" } },
+            "fontSize": 11,
+            "fontFamily": "Inter"
+          }
+        ]
+      }
+    }
+  }
+}

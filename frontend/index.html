@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TBD Jobs — Career Platform</title>
+  <meta name="description" content="Explore the job market, find opportunities matching your profile, and get personalised career guidance." />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Top navigation ──────────────────────────────────────────────────── -->
+  <nav class="topnav">
+    <div class="nav-brand">
+      <span class="brand-dot"></span>TBD Jobs
+    </div>
+    <div class="nav-links">
+      <button class="nav-link active" data-page="dashboard" id="nav-dashboard">Market Overview</button>
+      <button class="nav-link" data-page="jobs"      id="nav-jobs">Find Jobs</button>
+      <button class="nav-link" data-page="advisor"   id="nav-advisor">Career Advisor</button>
+    </div>
+    <div class="nav-ready" id="nav-ready">
+      <div class="ready-dot"></div>
+      <span id="ready-label">Not ready</span>
+    </div>
+  </nav>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       PAGE 1 — Market Overview (Power BI)
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <section class="page active" id="page-dashboard">
+    <div class="pbi-frame-wrap" id="pbi-frame-wrap">
+      <!-- Populated by app.js based on /api/config -->
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       PAGE 2 — Find Jobs
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <section class="page" id="page-jobs">
+
+    <!-- Left sidebar: search controls -->
+    <aside class="jobs-sidebar">
+      <div>
+        <div class="section-title">Search</div>
+        <div class="form-group">
+          <label class="form-label" for="search-query">Role or skill</label>
+          <input class="form-input" id="search-query" type="text"
+                 placeholder="e.g. Software Engineer, Data Analyst" value="software engineer" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="search-location">Location</label>
+          <input class="form-input" id="search-location" type="text"
+                 placeholder="e.g. Paris, London, Remote" />
+        </div>
+
+        <!-- Advanced options -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="job-limit">Limit</label>
+            <input class="form-input" id="job-limit" type="number" value="15" min="1" max="50" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="threshold">Threshold</label>
+            <input class="form-input" id="threshold" type="number" value="0.38" min="0" max="1" step="0.05" />
+          </div>
+        </div>
+        <div class="form-help">Limit = max results • Threshold = semantic similarity cutoff</div>
+
+        <button class="btn btn-primary" id="btn-search" style="margin-top: 14px;">
+          <div class="spinner"></div>
+          <span class="btn-text">Search Jobs</span>
+        </button>
+      </div>
+
+      <!-- Source logs -->
+      <div id="search-status" style="display:none;">
+        <div class="section-title">Sources</div>
+        <div class="source-logs" id="source-logs"></div>
+      </div>
+
+      <!-- Pipeline buttons (auto-chained but kept for manual use) -->
+      <div id="pipeline-controls" style="display:none;">
+        <div class="section-title">Pipeline</div>
+        <button class="btn btn-outline" id="btn-index" style="margin-bottom: 8px;">
+          <div class="spinner"></div>
+          <span class="btn-text">Build Index</span>
+        </button>
+        <button class="btn btn-outline" id="btn-retrieve">
+          <div class="spinner"></div>
+          <span class="btn-text">Find Matches</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Right: job listings -->
+    <div class="jobs-main">
+      <div class="jobs-header">
+        <div class="jobs-title" id="jobs-title">Browse Opportunities</div>
+        <div class="jobs-subtitle" id="jobs-subtitle">Use the search panel to find positions</div>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="jobs">
+          All Jobs <span class="tab-badge" id="jobs-badge">0</span>
+        </button>
+        <button class="tab-btn" data-tab="matches">
+          Matches <span class="tab-badge" id="matches-badge">0</span>
+        </button>
+      </div>
+
+      <!-- All jobs panel -->
+      <div class="tab-panel active" id="panel-jobs">
+        <div class="jobs-grid" id="jobs-grid">
+          <div class="empty-state">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-title">No results yet</div>
+            <div class="empty-hint">Enter a role or skill on the left and click Search to see available positions.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Matched jobs panel -->
+      <div class="tab-panel" id="panel-matches">
+        <div class="jobs-grid" id="matches-grid">
+          <div class="empty-state">
+            <div class="empty-icon">🎯</div>
+            <div class="empty-title">No matches yet</div>
+            <div class="empty-hint">Upload your resume in the Career Advisor tab to see matched positions here.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="jobs-count" id="jobs-shown"></div>
+    </div>
+
+  </section>
+
+  <!-- ════════════════════════════════════════════════════════════════════════
+       PAGE 3 — Career Advisor
+  ════════════════════════════════════════════════════════════════════════════ -->
+  <section class="page" id="page-advisor">
+
+    <!-- Left sidebar: resume upload + matched jobs -->
+    <aside class="advisor-sidebar">
+
+      <!-- Steps -->
+      <div>
+        <div class="section-title">Getting started</div>
+        <div class="steps">
+          <div class="step" id="step-jobs">
+            <div class="step-num">1</div>
+            <div class="step-label">Search for jobs first</div>
+          </div>
+          <div class="step" id="step-cv">
+            <div class="step-num">2</div>
+            <div class="step-label">Upload your resume</div>
+          </div>
+          <div class="step" id="step-ready">
+            <div class="step-num">3</div>
+            <div class="step-label">Ask your career questions</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resume upload -->
+      <div>
+        <div class="section-title">Your resume</div>
+        <div class="upload-zone" id="drop-zone">
+          <input type="file" id="cv-file" accept=".pdf,.docx" />
+          <span class="drop-icon">📂</span>
+          <div class="upload-heading">Upload your resume</div>
+          <div class="upload-sub">Drop a file here or click to browse</div>
+          <div class="upload-types">PDF or Word document</div>
+        </div>
+        <div class="cv-badge" id="cv-badge">
+          <span>&#10003;</span>
+          <span class="cv-filename" id="cv-filename">resume.pdf</span>
+          <span class="cv-chars" id="cv-chars"></span>
+        </div>
+        <div class="cv-preview" id="cv-preview"></div>
+      </div>
+
+      <!-- Matched positions (shown after match runs) -->
+      <div id="matches-section" style="display:none;">
+        <div class="section-title">Positions matched to your profile</div>
+        <div class="match-list" id="match-list"></div>
+      </div>
+
+    </aside>
+
+    <!-- Right: chat -->
+    <div class="advisor-main">
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-intro" id="chat-intro">
+          <h2>Your Career Advisor</h2>
+          <p>
+            Once you have searched for jobs and uploaded your resume, your advisor will
+            review your profile against real positions and answer your questions.
+          </p>
+          <div class="chat-suggestions">
+            <button class="suggestion" onclick="sendChip('Which of these positions best fits my background?')">Which position fits me best?</button>
+            <button class="suggestion" onclick="sendChip('What skills should I develop to be a stronger candidate?')">What skills should I develop?</button>
+            <button class="suggestion" onclick="sendChip('How can I improve my resume for these roles?')">How can I improve my resume?</button>
+            <button class="suggestion" onclick="sendChip('Can you give me likely interview questions for these roles?')">Interview questions</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-bar">
+        <div class="chat-input-wrap">
+          <textarea id="chat-input" rows="1"
+            placeholder="Ask about your fit, skill gaps, interview preparation..."></textarea>
+        </div>
+        <button class="send-btn" id="send-btn" title="Send message">&#10148;</button>
+      </div>
+    </div>
+
+  </section>
+
+</div>
+
+<div id="toast-container"></div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/upload.js"></script>
+<script src="/static/js/jobs.js"></script>
+<script src="/static/js/chat.js"></script>
+</body>
+</html>

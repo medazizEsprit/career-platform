@@ -1,0 +1,28 @@
+# Credentials & Environment
+.env
+.env.local
+.env.*.local
+
+# Python environment & cache
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env/
+build/
+dist/
+*.egg-info/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Power BI Desktop binary files
+*.pbix

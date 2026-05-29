@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: career-platform
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: COHERE_API
+        sync: false
+        placeholder: "Your Cohere API Key"
+      - key: RAPIDAPI_KEY
+        sync: false
+        placeholder: "Your RapidAPI Key"
+      - key: FINDWORK_API_KEY
+        sync: false
+        placeholder: "Your Findwork API Key"
+      - key: POWERBI_EMBED_URL
+        sync: false
+        placeholder: "Your Power BI Embed URL (e.g. https://app.powerbi.com/view?r=...)"
