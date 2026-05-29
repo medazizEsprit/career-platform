@@ -148,7 +148,7 @@ def stream_chat(
         return
 
     try:
-        # Connect using Cohere's active Command-A model
+        # Connect using Cohere's active Command-A+ model
         client = cohere.Client(COHERE_API_KEY)
         
         cohere_history = []
@@ -157,7 +157,7 @@ def stream_chat(
             cohere_history.append({"role": role, "message": turn["content"]})
 
         for event in client.chat_stream(
-            model="command-a",
+            model="command-a-plus-05-2026",
             message=message,
             preamble=system_prompt,
             chat_history=cohere_history,
