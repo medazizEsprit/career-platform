@@ -6,8 +6,9 @@ Preserves the exact same system prompt logic.
 from typing import List, Dict, Generator
 import json
 import requests
+import cohere
 
-from app.config import HF_TOKEN, CHAT_MODEL
+from app.config import HF_TOKEN, CHAT_MODEL, COHERE_API_KEY
 
 
 def build_system_prompt(cv_text: str, top_matches: List[Dict]) -> str:
@@ -89,23 +90,24 @@ def stream_chat(
     top_matches: List[Dict],
 ) -> Generator[str, None, None]:
     """
-    Stream a Qwen response token-by-token using the Hugging Face Serverless Inference API.
-    Yields text chunks as they arrive.
+    Stream a response token-by-token. 
+    Tries Qwen (Hugging Face) first, and automatically falls back to Cohere Command-A 
+    if Hugging Face is blocked or unreachable on your current network (common on restricted Wi-Fi).
     """
     system_prompt = build_system_prompt(cv_text, top_matches)
 
-    # Format the message history for Qwen (standard chat template format)
-    formatted_messages = [{"role": "system", "content": system_prompt}]
-    for turn in history:
-        formatted_messages.append({"role": turn["role"], "content": turn["content"]})
-    formatted_messages.append({"role": "user", "content": message})
-
+    # --- ENGINE 1: Qwen on Hugging Face Serverless API ---
     api_url = f"https://api-inference.huggingface.co/models/{CHAT_MODEL}"
     headers = {
         "Content-Type": "application/json"
     }
     if HF_TOKEN and HF_TOKEN.strip():
         headers["Authorization"] = f"Bearer {HF_TOKEN.strip()}"
+
+    formatted_messages = [{"role": "system", "content": system_prompt}]
+    for turn in history:
+        formatted_messages.append({"role": turn["role"], "content": turn["content"]})
+    formatted_messages.append({"role": "user", "content": message})
 
     payload = {
         "model": CHAT_MODEL,
@@ -116,25 +118,53 @@ def stream_chat(
     }
 
     try:
-        response = requests.post(api_url, headers=headers, json=payload, stream=True, timeout=25)
+        # Tries Hugging Face Qwen with a quick connection timeout of 6 seconds
+        response = requests.post(api_url, headers=headers, json=payload, stream=True, timeout=6)
         
-        if response.status_code != 200:
-            yield f"Error from Hugging Face API (Status {response.status_code}): {response.text}"
-            return
-
-        for line in response.iter_lines():
-            if line:
-                decoded_line = line.decode('utf-8').strip()
-                if decoded_line.startswith("data:"):
-                    data_str = decoded_line[5:].strip()
-                    if data_str == "[DONE]":
-                        break
-                    try:
-                        data = json.loads(data_str)
-                        token = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                        if token:
-                            yield token
-                    except Exception:
-                        pass
+        if response.status_code == 200:
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode('utf-8').strip()
+                    if decoded_line.startswith("data:"):
+                        data_str = decoded_line[5:].strip()
+                        if data_str == "[DONE]":
+                            break
+                        try:
+                            data = json.loads(data_str)
+                            token = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                            if token:
+                                yield token
+                        except Exception:
+                            pass
+            return # Successfully streamed using Hugging Face!
+        else:
+            print(f"Power BI / HF: Hugging Face API returned status {response.status_code}. Trying Cohere fallback...")
     except Exception as e:
-        yield f"Connection Error: {e}"
+        print(f"Power BI / HF: Hugging Face connection failed ({e}). Falling back to Cohere Command-A...")
+
+    # --- ENGINE 2: Cohere Command-A Fallback (Unblocked on restricted networks) ---
+    if not COHERE_API_KEY:
+        yield "Connection Error: Hugging Face API is unreachable on your current network, and no COHERE_API key is configured in your .env file to act as a fallback."
+        return
+
+    try:
+        # Connect using Cohere's active Command-A model
+        client = cohere.Client(COHERE_API_KEY)
+        
+        cohere_history = []
+        for turn in history:
+            role = "USER" if turn["role"] == "user" else "CHATBOT"
+            cohere_history.append({"role": role, "message": turn["content"]})
+
+        for event in client.chat_stream(
+            model="command-a",
+            message=message,
+            preamble=system_prompt,
+            chat_history=cohere_history,
+            temperature=0.5,
+            max_tokens=400,
+        ):
+            if event.event_type == "text-generation":
+                yield event.text
+    except Exception as co_err:
+        yield f"Chat Connection Error: Both Qwen (Hugging Face) and Cohere APIs failed. details:\n- Qwen: Blocked / Unreachable\n- Cohere: {co_err}"
