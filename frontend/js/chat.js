@@ -43,7 +43,7 @@ function appendMessage(role, content = '') {
   const div = document.createElement('div');
   div.className = `message ${role}`;
   div.innerHTML = `
-    <div class="msg-avatar">${role === 'user' ? '👤' : '🤖'}</div>
+    <div class="msg-avatar">${role === 'user' ? 'U' : 'AI'}</div>
     <div class="msg-bubble">${formatContent(content)}</div>`;
   chatMessages.appendChild(div);
   scrollToBottom();
@@ -55,7 +55,7 @@ function appendTypingIndicator() {
   div.className = 'message assistant typing-indicator';
   div.id = 'typing-indicator';
   div.innerHTML = `
-    <div class="msg-avatar">🤖</div>
+    <div class="msg-avatar">AI</div>
     <div class="msg-bubble">
       <div class="typing-dot"></div>
       <div class="typing-dot"></div>
@@ -104,7 +104,7 @@ async function sendMessage() {
     if (!res.ok) {
       const err = await res.json();
       typingEl.remove();
-      appendMessage('assistant', `❌ ${err.detail || 'Something went wrong.'}`);
+      appendMessage('assistant', `Error: ${err.detail || 'Something went wrong.'}`);
       return;
     }
 
@@ -135,7 +135,7 @@ async function sendMessage() {
             scrollToBottom();
           }
           if (parsed.error) {
-            bubble.innerHTML = `<span style="color:var(--red)">❌ ${formatContent(parsed.error)}</span>`;
+            bubble.innerHTML = `<span style="color:var(--red)">Error: ${formatContent(parsed.error)}</span>`;
           }
         } catch (_) { /* partial chunk */ }
       }
@@ -150,7 +150,7 @@ async function sendMessage() {
 
   } catch (err) {
     typingEl?.remove();
-    appendMessage('assistant', `❌ Network error: ${err.message}`);
+    appendMessage('assistant', `Error: Network error: ${err.message}`);
   } finally {
     isStreaming = false;
     sendBtn.disabled = false;

@@ -9,6 +9,31 @@ const btnRetrieve = document.getElementById('btn-retrieve');
 let allJobs    = [];
 let topMatches = [];
 
+// ── Discuss with Advisor Integration ─────────────────────────────────────────
+window.chatAboutJob = function(index, isMatched) {
+  const job = isMatched ? topMatches[index] : allJobs[index];
+  if (!job) return;
+
+  // 1. Switch to Career Advisor page
+  const navAdvisor = document.getElementById('nav-advisor');
+  if (navAdvisor) navAdvisor.click();
+
+  // 2. Pre-fill input with structured job details
+  const chatInput = document.getElementById('chat-input');
+  if (chatInput) {
+    chatInput.value = `I am interested in the "${job.title}" position at "${job.company}". Can you analyze my resume against this job description and suggest how I can tailor my profile for it?`;
+    chatInput.dispatchEvent(new Event('input')); // trigger auto-resize
+
+    // 3. Click send button automatically
+    const sendBtn = document.getElementById('send-btn');
+    if (sendBtn) {
+      setTimeout(() => {
+        sendBtn.click();
+      }, 350); // natural delay for smooth tab transit
+    }
+  }
+};
+
 // ── Render job cards ──────────────────────────────────────────────────────────
 function renderJobCards(jobs, containerId, isMatched = false) {
   const grid = document.getElementById(containerId);
@@ -17,7 +42,6 @@ function renderJobCards(jobs, containerId, isMatched = false) {
   if (!jobs.length) {
     grid.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">${isMatched ? '🎯' : '🔍'}</div>
         <div class="empty-text">No ${isMatched ? 'matches' : 'jobs'} found</div>
         <div class="empty-hint">${isMatched ? 'Upload your resume in the Career Advisor tab' : 'Adjust your search query'}</div>
       </div>`;
@@ -38,12 +62,15 @@ function renderJobCards(jobs, containerId, isMatched = false) {
         ${score ? `<div class="job-score-badge ${isHigh ? 'high' : ''}">${pct}%</div>` : ''}
       </div>
       <div class="job-meta">
-        <span class="job-tag">🏢 ${escHtml(job.company)}</span>
-        <span class="job-tag">📍 ${escHtml(job.location || 'Remote')}</span>
-        <span class="job-tag">🔗 ${escHtml(job.source)}</span>
+        <span class="job-tag">${escHtml(job.company)}</span>
+        <span class="job-tag">${escHtml(job.location || 'Remote')}</span>
+        <span class="job-tag">${escHtml(job.source)}</span>
       </div>
       <div class="job-desc">${escHtml(job.description || '')}</div>
       ${score ? `<div class="score-bar"><div class="score-bar-fill" style="width:${pct}%"></div></div>` : ''}
+      <button class="job-action-btn" onclick="event.stopPropagation(); chatAboutJob(${i}, ${isMatched})">
+        Discuss with Advisor
+      </button>
     </div>`;
   }).join('');
 }
