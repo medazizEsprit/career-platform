@@ -4,11 +4,10 @@ Replaces the notebook's Qwen local model; no GPU required.
 Preserves the exact same system prompt logic.
 """
 from typing import List, Dict, Generator
-import cohere
+import json
+import requests
 
-from app.config import COHERE_API_KEY, CHAT_MODEL
-
-_co = cohere.Client(COHERE_API_KEY) if COHERE_API_KEY else None
+from app.config import HF_TOKEN, CHAT_MODEL
 
 
 def build_system_prompt(cv_text: str, top_matches: List[Dict]) -> str:
@@ -90,31 +89,52 @@ def stream_chat(
     top_matches: List[Dict],
 ) -> Generator[str, None, None]:
     """
-    Stream a Cohere Command R response token-by-token.
+    Stream a Qwen response token-by-token using the Hugging Face Serverless Inference API.
     Yields text chunks as they arrive.
     """
-    if not _co:
-        yield "Error: COHERE_API key not configured."
-        return
-
     system_prompt = build_system_prompt(cv_text, top_matches)
 
-    # Build chat history in Cohere format
-    chat_history = []
+    # Format the message history for Qwen (standard chat template format)
+    formatted_messages = [{"role": "system", "content": system_prompt}]
     for turn in history:
-        role = "USER" if turn["role"] == "user" else "CHATBOT"
-        chat_history.append({"role": role, "message": turn["content"]})
+        formatted_messages.append({"role": turn["role"], "content": turn["content"]})
+    formatted_messages.append({"role": "user", "content": message})
+
+    api_url = f"https://api-inference.huggingface.co/models/{CHAT_MODEL}"
+    headers = {
+        "Content-Type": "application/json"
+    }
+    if HF_TOKEN and HF_TOKEN.strip():
+        headers["Authorization"] = f"Bearer {HF_TOKEN.strip()}"
+
+    payload = {
+        "model": CHAT_MODEL,
+        "messages": formatted_messages,
+        "temperature": 0.7,
+        "max_tokens": 512,
+        "stream": True
+    }
 
     try:
-        for event in _co.chat_stream(
-            model=CHAT_MODEL,
-            message=message,
-            preamble=system_prompt,
-            chat_history=chat_history,
-            temperature=0.5,
-            max_tokens=400,
-        ):
-            if event.event_type == "text-generation":
-                yield event.text
+        response = requests.post(api_url, headers=headers, json=payload, stream=True, timeout=25)
+        
+        if response.status_code != 200:
+            yield f"Error from Hugging Face API (Status {response.status_code}): {response.text}"
+            return
+
+        for line in response.iter_lines():
+            if line:
+                decoded_line = line.decode('utf-8').strip()
+                if decoded_line.startswith("data:"):
+                    data_str = decoded_line[5:].strip()
+                    if data_str == "[DONE]":
+                        break
+                    try:
+                        data = json.loads(data_str)
+                        token = data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                        if token:
+                            yield token
+                    except Exception:
+                        pass
     except Exception as e:
-        yield f"\n\n[Error generating response: {e}]"
+        yield f"Connection Error: {e}"
